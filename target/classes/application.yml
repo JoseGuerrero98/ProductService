@@ -1,0 +1,7 @@
+server:
+  port: 8084
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://jguerrero:josesitoxd98@cluster0.nrk81.azure.mongodb.net/test?retryWrites=true&w=majority
+      database: bank
