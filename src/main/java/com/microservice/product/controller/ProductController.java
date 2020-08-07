@@ -33,6 +33,16 @@ public class ProductController {
 		return service.findAll();
 	}
 	
+	@GetMapping("/client/{id}")
+	public Flux<Product> findByClient(@PathVariable("id") String id) {
+		return service.findByClient(id);
+	}
+	
+	@GetMapping("/validationproducts")
+	public Flux<Product> validationStatus() {
+		return service.validationProducts();
+	}
+	
 	@GetMapping("/findbyid/{id}")
 	public Mono<Product> findById(@PathVariable("id") String id) {
 		return service.findById(id);

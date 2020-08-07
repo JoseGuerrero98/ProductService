@@ -25,6 +25,11 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
+	public Flux<Product> findByClient(String idclient) {
+		return repo.findByClient(idclient);
+	}
+	
+	@Override
 	public Mono<Product> findById(String id) {
 		return repo.findById(id);
 	}
@@ -35,7 +40,39 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
+	public Flux<Product> validationProducts() {
+		
+		return repo.findAll().flatMap(all -> {
+			if(all.getAmount() < 0) {
+				all.setStatus(false);
+			}else {
+				all.setStatus(true);
+			}
+			return repo.save(all);
+			
+		});
+	}
+	
+	public Flux<Product> statusClient(String idclient) {
+		
+		return repo.validateStatus(idclient);
+		
+	}
+	
+	public Flux<Boolean> validateStatus(String idclient) {
+		
+		return repo.validateStatus(idclient).flatMap(status -> {
+			return Flux.just(false);
+		}).switchIfEmpty(Flux.just(true));
+		
+	}
+	
+	@Override
 	public Mono<Product> createProduct(Product product) {
+		
+		System.out.println("**************************************************");
+		System.out.println("**************************************************");
+		System.out.println("**************************************************");
 		
 		Mono<Boolean> existbank = existBank(product.getIdBank());
 		
@@ -51,53 +88,69 @@ public class ProductServiceImpl implements ProductService {
 			if(bank) {
 				return existclient.flatMap(client -> {
 					if(client) {
-						return typeprod.flatMap(productval -> {
-							if(productval) {
-								return typeaccountcredit.flatMap(accountcred -> {
-									if(accountcred) {
-										
-										return validateCreate.flatMap(validate -> {
-											
-											if(validate) {
-												return repo.save(product).flatMap(saveprod -> {
-													System.out.println(saveprod.getId());
-													System.out.println(saveprod.getTypeProduct());
-													return repo.findById(saveprod.getId()).flatMap(updateprod -> {
-														
-														if(saveprod.getTypeProduct().equals("CUENTA")) {
-															updateprod.setCantTransaction(5.0);
-														}
-														
-														if(saveprod.getTypeProduct().equals("CREDITO")) {
-															updateprod.setCreditAmount(200.0);
-															updateprod.setStatus(true);
-														}
-														
-														return repo.save(updateprod);
-													});
-													//return Mono.empty();
+						
+						Mono<Boolean> status = validateStatus(product.getIdClient()).next();
+						
+						return status.flatMap(sta -> {
+							
+							if(sta) {
+								return typeprod.flatMap(productval -> {
+									if(productval) {
+										return typeaccountcredit.flatMap(accountcred -> {
+											if(accountcred) {
+												
+												return validateCreate.flatMap(validate -> {
+													
+													if(validate) {
+														return repo.save(product).flatMap(saveprod -> {
+															System.out.println(saveprod.getId());
+															System.out.println(saveprod.getTypeProduct());
+															return repo.findById(saveprod.getId()).flatMap(updateprod -> {
+																
+																if(saveprod.getTypeProduct().equals("CUENTA")) {
+																	updateprod.setCantTransaction(5.0);
+																}
+																
+																if(saveprod.getTypeProduct().equals("CREDITO")) {
+																	updateprod.setCreditAmount(200.0);
+																	updateprod.setStatus(true);
+																}
+																
+																return repo.save(updateprod);
+															});
+															//return Mono.empty();
+														});
+													}else {
+														//mensaje de: 
+														System.out.println("No se pudo crear la cuenta, si eres"
+																+ " cliente personal no puede tener mas de una cuenta de ahorro, corriente o plazo fijo,"
+																+ " si eres cliente empresarial solo puede tener cuentas corrientes");
+														return Mono.empty();
+													}
+													
 												});
+												
 											}else {
-												//mensaje de: El cliente no existe
-												System.out.println("No se pudo crear la cuenta");
+												//mensaje de: 
+												System.out.println("El tipo de cuenta o credito que escogio no esta registrado");
 												return Mono.empty();
 											}
-											
 										});
-										
+										//return repo.save(product);
 									}else {
-										//mensaje de: El cliente no existe
-										System.out.println("El tipo de cuenta o credito que escogio no esta registrado");
+										//mensaje de: 
+										System.out.println("El tipo de producto no esta registrado");
 										return Mono.empty();
 									}
 								});
-								//return repo.save(product);
 							}else {
-								//mensaje de: El cliente no existe
-								System.out.println("El tipo de producto no esta registrado");
+								System.out.println("Tiene una deuda en una de sus productos de credito, no puede acceder a un nuevo producto");
 								return Mono.empty();
 							}
+							
 						});
+						
+						/**/
 
 					}else {
 						//mensaje de: El cliente no existe

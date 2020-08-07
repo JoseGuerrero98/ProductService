@@ -8,6 +8,8 @@ import reactor.core.publisher.Mono;
 public interface ProductService {
 
 	public Flux<Product> findAll();
+	public Flux<Product> validationProducts();
+	public Flux<Product> findByClient(String idclient);
 	public Mono<Product> findById(String id);
 	public Mono<Product> createProduct(Product product);
 	public Mono<Product> updateProduct(Product product, String id);

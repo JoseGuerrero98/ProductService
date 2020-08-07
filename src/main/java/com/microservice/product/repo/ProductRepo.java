@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import com.microservice.product.model.Product;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -16,5 +17,11 @@ public interface ProductRepo extends ReactiveMongoRepository<Product, String> {
 	
 	@Query("{ 'idBank' : ?0, 'idClient' : ?1, 'type' : ?2 }")
 	public Mono<Product> validateTypeCreditPers(String idbank, String idclient, String type);
+	
+	@Query("{ 'idClient' : ?0, 'status' : false, 'typeProduct' : 'CREDITO'}")
+	public Flux<Product> validateStatus(String idclient);
+	
+	@Query("{ 'idClient' : ?0 }")
+	public Flux<Product> findByClient(String idclient);
 	
 }
